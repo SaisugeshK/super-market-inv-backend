@@ -1,64 +1,91 @@
-import { useEffect, useState } from 'react';
-import { FiFileText, FiShoppingCart, FiRotateCcw, FiActivity } from 'react-icons/fi';
-import invoicesService from '../services/invoicesService';
-import purchasesService from '../services/purchasesService';
-import salesReturnsService from '../services/salesReturnsService';
-import stockMovementsService from '../services/stockMovementsService';
-import productsService from '../services/productsService';
+import { useCallback, useEffect, useState } from 'react';
+import { FiFileText, FiShoppingCart, FiTruck, FiActivity, FiBarChart2 } from 'react-icons/fi';
+import reportsService from '../services/reportsService';
 import Loader from '../components/Loader';
-import ErrorPage from './ErrorPage';
 import EmptyState from '../components/EmptyState';
 
 const asList = (data) => (Array.isArray(data) ? data : data?.content || data?.data || []);
 
 const TABS = [
-  { key: 'sales', label: 'Sales (Invoices)', icon: FiFileText },
+  { key: 'sales', label: 'Sales', icon: FiFileText },
   { key: 'purchases', label: 'Purchases', icon: FiShoppingCart },
-  { key: 'returns', label: 'Sales Returns', icon: FiRotateCcw },
-  { key: 'stock', label: 'Stock Movements', icon: FiActivity },
+  { key: 'supplierOutstanding', label: 'Supplier Outstanding', icon: FiTruck },
+  { key: 'stock', label: 'Stock', icon: FiActivity },
+  { key: 'productSales', label: 'Product Sales', icon: FiBarChart2 },
 ];
+
+const money = (v) => Number(v || 0).toFixed(2);
+// datetime-local value -> ISO date-time the backend's @DateTimeFormat accepts
+const toIso = (v) => (v ? `${v}:00` : undefined);
 
 export default function Reports() {
   const [tab, setTab] = useState('sales');
-  const [state, setState] = useState({ loading: true, error: null, data: {} });
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // filters
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [counterId, setCounterId] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [supplierId, setSupplierId] = useState('');
+
+  const fetchReport = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let data;
+      if (tab === 'sales') {
+        data = await reportsService.sales({
+          from: toIso(from),
+          to: toIso(to),
+          counterId: counterId || undefined,
+          paymentMethod: paymentMethod || undefined,
+          invoiceNumber: invoiceNumber || undefined,
+        });
+      } else if (tab === 'purchases') {
+        data = await reportsService.purchases({
+          supplierId: supplierId || undefined,
+          from: toIso(from),
+          to: toIso(to),
+        });
+      } else if (tab === 'supplierOutstanding') {
+        data = await reportsService.supplierOutstanding();
+      } else if (tab === 'stock') {
+        data = await reportsService.stock();
+      } else if (tab === 'productSales') {
+        data = await reportsService.productSales({ from: toIso(from), to: toIso(to) });
+      }
+      setRows(asList(data));
+    } catch (err) {
+      setError(err);
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [tab, from, to, invoiceNumber, counterId, paymentMethod, supplierId]);
 
   useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      invoicesService.getAll(),
-      purchasesService.getAll(),
-      salesReturnsService.getAll(),
-      stockMovementsService.getAll(),
-      productsService.getAll(),
-    ])
-      .then(([invoices, purchases, returns, stock, products]) => {
-        if (cancelled) return;
-        setState({
-          loading: false,
-          error: null,
-          data: {
-            sales: asList(invoices),
-            purchases: asList(purchases),
-            returns: asList(returns),
-            stock: asList(stock),
-            products: asList(products),
-          },
-        });
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        setState((prev) => ({ ...prev, loading: false, error }));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    fetchReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
-  if (state.loading) return <Loader label="Building reports..." />;
-  if (state.error) return <ErrorPage message="Could not load report data from the backend." />;
-
-  const { sales, purchases, returns, stock, products } = state.data;
-  const productName = (id) => products.find((p) => p.id === id)?.productName || id;
+  const dateFilters = (
+    <>
+      <div className="col-auto">
+        <label className="form-label small mb-1">From</label>
+        <input type="datetime-local" className="form-control form-control-sm"
+          value={from} onChange={(e) => setFrom(e.target.value)} />
+      </div>
+      <div className="col-auto">
+        <label className="form-label small mb-1">To</label>
+        <input type="datetime-local" className="form-control form-control-sm"
+          value={to} onChange={(e) => setTo(e.target.value)} />
+      </div>
+    </>
+  );
 
   return (
     <div>
@@ -79,127 +106,209 @@ export default function Reports() {
         ))}
       </ul>
 
+      {/* Filters */}
+      {(tab === 'sales' || tab === 'purchases' || tab === 'productSales') && (
+        <div className="erp-card p-3 mb-3">
+          <div className="row g-2 align-items-end">
+            {dateFilters}
+            {tab === 'sales' && (
+              <>
+                <div className="col-auto">
+                  <label className="form-label small mb-1">Invoice #</label>
+                  <input className="form-control form-control-sm" value={invoiceNumber}
+                    onChange={(e) => setInvoiceNumber(e.target.value)} />
+                </div>
+                <div className="col-auto">
+                  <label className="form-label small mb-1">Counter ID</label>
+                  <input className="form-control form-control-sm" value={counterId}
+                    onChange={(e) => setCounterId(e.target.value)} style={{ width: 100 }} />
+                </div>
+                <div className="col-auto">
+                  <label className="form-label small mb-1">Payment Method</label>
+                  <select className="form-select form-select-sm" value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}>
+                    <option value="">Any</option>
+                    <option value="CASH">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="CARD">Card</option>
+                  </select>
+                </div>
+              </>
+            )}
+            {tab === 'purchases' && (
+              <div className="col-auto">
+                <label className="form-label small mb-1">Supplier ID</label>
+                <input className="form-control form-control-sm" value={supplierId}
+                  onChange={(e) => setSupplierId(e.target.value)} style={{ width: 100 }} />
+              </div>
+            )}
+            <div className="col-auto">
+              <button className="btn btn-sm btn-primary" onClick={fetchReport}>Apply</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="erp-card p-3">
-        {tab === 'sales' &&
-          (sales.length === 0 ? (
-            <EmptyState title="No invoices yet" message="Sales report will populate once invoices are created." />
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-sm mb-0">
-                <thead>
-                  <tr>
-                    <th>Invoice #</th>
-                    <th>Subtotal</th>
-                    <th>Tax</th>
-                    <th>Discount</th>
-                    <th>Grand Total</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sales.map((inv) => (
-                    <tr key={inv.id}>
-                      <td>{inv.invoiceNumber}</td>
-                      <td>{Number(inv.subtotal || 0).toFixed(2)}</td>
-                      <td>{Number(inv.taxAmount || 0).toFixed(2)}</td>
-                      <td>{Number(inv.discountAmount || 0).toFixed(2)}</td>
-                      <td>{Number(inv.grandTotal || 0).toFixed(2)}</td>
-                      <td>{inv.paymentStatus}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-
-        {tab === 'purchases' &&
-          (purchases.length === 0 ? (
-            <EmptyState title="No purchases yet" message="Purchase report will populate once purchases are recorded." />
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-sm mb-0">
-                <thead>
-                  <tr>
-                    <th>Invoice #</th>
-                    <th>Total</th>
-                    <th>Tax</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {purchases.map((p) => (
-                    <tr key={p.id}>
-                      <td>{p.invoiceNumber}</td>
-                      <td>{Number(p.totalAmount || 0).toFixed(2)}</td>
-                      <td>{Number(p.tax || 0).toFixed(2)}</td>
-                      <td>{p.paymentStatus}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-
-        {tab === 'returns' &&
-          (returns.length === 0 ? (
-            <EmptyState title="No sales returns yet" message="Returns will show up here once recorded." />
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-sm mb-0">
-                <thead>
-                  <tr>
-                    <th>Sale ID</th>
-                    <th>Qty Returned</th>
-                    <th>Reason</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {returns.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.saleId}</td>
-                      <td>{r.returnQuantity}</td>
-                      <td>{r.reason}</td>
-                      <td>{Number(r.totalAmount || 0).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-
-        {tab === 'stock' &&
-          (stock.length === 0 ? (
-            <EmptyState title="No stock movements yet" message="Stock changes from sales and purchases will appear here." />
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-sm mb-0">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Type</th>
-                    <th>Quantity</th>
-                    <th>Remarks</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stock.map((s) => (
-                    <tr key={s.id}>
-                      <td>{productName(s.productId)}</td>
-                      <td>
-                        <span className={`badge ${s.movementType === 'IN' ? 'bg-success' : 'bg-danger'}`}>
-                          {s.movementType}
-                        </span>
-                      </td>
-                      <td>{s.quantity}</td>
-                      <td>{s.remarks}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
+        {loading ? (
+          <Loader label="Building report..." />
+        ) : error ? (
+          <EmptyState title="Could not load report" message="The report endpoint returned an error." />
+        ) : rows.length === 0 ? (
+          <EmptyState title="No data" message="No records match this report / filter." />
+        ) : (
+          <div className="table-responsive">
+            {tab === 'sales' && <SalesTable rows={rows} />}
+            {tab === 'purchases' && <PurchasesTable rows={rows} />}
+            {tab === 'supplierOutstanding' && <SupplierOutstandingTable rows={rows} />}
+            {tab === 'stock' && <StockTable rows={rows} />}
+            {tab === 'productSales' && <GenericTable rows={rows} />}
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function SalesTable({ rows }) {
+  return (
+    <table className="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Invoice #</th><th>Date</th><th>Customer</th><th>Counter</th>
+          <th>Method</th><th>Status</th><th>Items</th><th className="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.saleId}>
+            <td>{r.invoiceNumber}</td>
+            <td>{r.saleDate ? String(r.saleDate).replace('T', ' ').slice(0, 16) : '—'}</td>
+            <td>{r.customerName || 'Walk-in'}</td>
+            <td>{r.counterId ?? '—'}</td>
+            <td>{r.paymentMethod || '—'}</td>
+            <td>{r.paymentStatus || '—'}</td>
+            <td>
+              {(r.items || [])
+                .map((it) => `${it.productName} ×${it.quantity}`)
+                .join(', ') || '—'}
+            </td>
+            <td className="text-end">{money(r.totalAmount)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function PurchasesTable({ rows }) {
+  return (
+    <table className="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Invoice #</th><th>Date</th><th>Supplier</th><th>Items</th>
+          <th className="text-end">Total</th><th className="text-end">Paid</th>
+          <th className="text-end">Pending</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.purchaseId}>
+            <td>{r.invoiceNumber}</td>
+            <td>{r.purchaseDate ? String(r.purchaseDate).replace('T', ' ').slice(0, 16) : '—'}</td>
+            <td>{r.supplierName}</td>
+            <td>
+              {(r.items || [])
+                .map((it) => `${it.productName} ×${it.quantity}${it.unit ? ' ' + it.unit : ''}`)
+                .join(', ') || '—'}
+            </td>
+            <td className="text-end">{money(r.totalAmount)}</td>
+            <td className="text-end">{money(r.paidAmount)}</td>
+            <td className="text-end">{money(r.pendingAmount)}</td>
+            <td>{r.paymentStatus}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function SupplierOutstandingTable({ rows }) {
+  return (
+    <table className="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Supplier</th>
+          <th className="text-end">Total Purchases</th>
+          <th className="text-end">Total Paid</th>
+          <th className="text-end">Total Pending</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.supplierId}>
+            <td>{r.supplierName}</td>
+            <td className="text-end">{money(r.totalPurchases)}</td>
+            <td className="text-end">{money(r.totalPaid)}</td>
+            <td className="text-end">
+              <span className={r.totalPending > 0 ? 'text-danger fw-semibold' : ''}>
+                {money(r.totalPending)}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function StockTable({ rows }) {
+  return (
+    <table className="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Product</th><th>Barcode</th><th>Unit</th>
+          <th className="text-end">Qty</th><th className="text-end">Purchase</th>
+          <th className="text-end">Selling</th><th className="text-end">Stock Value</th><th>Low?</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.productId}>
+            <td>{r.productName}</td>
+            <td>{r.barcode}</td>
+            <td>{r.unit}</td>
+            <td className="text-end">{r.stockQuantity}</td>
+            <td className="text-end">{money(r.purchasePrice)}</td>
+            <td className="text-end">{money(r.sellingPrice)}</td>
+            <td className="text-end">{money(r.stockValue)}</td>
+            <td>
+              {r.lowStock ? <span className="badge bg-danger">LOW</span> : <span className="badge bg-success">OK</span>}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// product-sales returns List<Map<String,Object>> with backend-defined keys.
+function GenericTable({ rows }) {
+  const keys = Object.keys(rows[0] || {});
+  return (
+    <table className="table table-sm mb-0">
+      <thead>
+        <tr>{keys.map((k) => <th key={k}>{k}</th>)}</tr>
+      </thead>
+      <tbody>
+        {rows.map((r, i) => (
+          <tr key={i}>
+            {keys.map((k) => (
+              <td key={k}>{typeof r[k] === 'number' ? Number(r[k]).toLocaleString('en-IN') : String(r[k] ?? '')}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

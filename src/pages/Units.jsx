@@ -6,6 +6,7 @@ const config = {
   title: 'Units',
   entityName: 'Unit',
   service: unitsService,
+  compact: true,
   searchKeys: ['unitName', 'shortName'],
   defaultValues: { unitName: '', shortName: '' },
   schema: unitSchema,

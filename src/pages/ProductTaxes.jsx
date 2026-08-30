@@ -21,6 +21,7 @@ export default function ProductTaxes() {
     title: 'Product Taxes',
     entityName: 'Product Tax',
     service: productTaxesService,
+    compact: true,
     searchKeys: ['taxName'],
     defaultValues: { productId: '', taxName: 'GST', taxPercentage: '' },
     schema: productTaxSchema,

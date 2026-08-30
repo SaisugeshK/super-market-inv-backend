@@ -21,6 +21,7 @@ export default function Barcodes() {
     title: 'Product Barcodes',
     entityName: 'Barcode',
     service: productBarcodesService,
+    compact: true,
     searchKeys: ['barcode'],
     defaultValues: { productId: '', barcode: '' },
     schema: productBarcodeSchema,

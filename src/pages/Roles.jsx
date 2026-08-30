@@ -6,6 +6,7 @@ const config = {
   title: 'Roles',
   entityName: 'Role',
   service: rolesService,
+  compact: true,
   searchKeys: ['roleName'],
   defaultValues: { roleName: '', description: '' },
   schema: roleSchema,

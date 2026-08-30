@@ -21,6 +21,7 @@ export default function Users() {
     title: 'Users',
     entityName: 'User',
     service: usersService,
+    compact: true,
     searchKeys: ['username', 'email', 'fullName'],
     defaultValues: {
       username: '',

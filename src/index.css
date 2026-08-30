@@ -185,3 +185,28 @@ body {
   padding: 32px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
 }
+
+/* ── Consolidated-page tab strips ─────────────────────────── */
+.erp-tabs {
+  border-bottom: 2px solid var(--erp-border);
+  gap: 2px;
+}
+.erp-tabs .nav-link {
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  color: #5b6b66;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.55rem 1rem;
+  border-radius: 8px 8px 0 0;
+}
+.erp-tabs .nav-link:hover {
+  color: var(--erp-primary);
+  background: rgba(47, 111, 79, 0.06);
+}
+.erp-tabs .nav-link.active {
+  color: var(--erp-primary);
+  background: transparent;
+  border-bottom-color: var(--erp-primary);
+}

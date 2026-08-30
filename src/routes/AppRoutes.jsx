@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import MainLayout from '../layouts/MainLayout';
 
@@ -6,37 +6,18 @@ import Login from '../pages/Login';
 import Dashboard from '../pages/Dashboard';
 import NotFound from '../pages/NotFound';
 
-import Categories from '../pages/Categories';
-import Products from '../pages/Products';
-import Barcodes from '../pages/Barcodes';
-import Units from '../pages/Units';
-import ProductTaxes from '../pages/ProductTaxes';
-
-import Customers from '../pages/Customers';
-import Suppliers from '../pages/Suppliers';
-import Users from '../pages/Users';
-import Roles from '../pages/Roles';
-
-import Purchases from '../pages/Purchases';
-import PurchaseItems from '../pages/PurchaseItems';
-import PurchaseReturns from '../pages/PurchaseReturns';
-import PurchaseReturnItems from '../pages/PurchaseReturnItems';
+import Catalog from '../pages/Catalog';
+import UsersRoles from '../pages/UsersRoles';
 
 import PointOfSale from '../pages/PointOfSale';
-import Invoices from '../pages/Invoices';
-import InvoiceItems from '../pages/InvoiceItems';
-import Sales from '../pages/Sales';
-import SalesItems from '../pages/SalesItems';
-import SalesReturns from '../pages/SalesReturns';
-import SalesReturnItems from '../pages/SalesReturnItems';
-import HoldInvoices from '../pages/HoldInvoices';
+import SalesHub from '../pages/SalesHub';
 import Payments from '../pages/Payments';
 import BillingCounters from '../pages/BillingCounters';
 import CashClosing from '../pages/CashClosing';
 
+import StockManagement from '../pages/StockManagement';
 import StockMovements from '../pages/StockMovements';
 import Reports from '../pages/Reports';
-import Settings from '../pages/Settings';
 
 export default function AppRoutes() {
   return (
@@ -47,37 +28,47 @@ export default function AppRoutes() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
 
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/barcodes" element={<Barcodes />} />
-          <Route path="/units" element={<Units />} />
-          <Route path="/product-taxes" element={<ProductTaxes />} />
+          {/* Catalog (products, categories, units, suppliers, purchases as tabs) */}
+          <Route path="/catalog" element={<Catalog />} />
 
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/suppliers" element={<Suppliers />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/roles" element={<Roles />} />
+          {/* People */}
+          <Route path="/users-roles" element={<UsersRoles />} />
 
-          <Route path="/purchases" element={<Purchases />} />
-          <Route path="/purchase-items" element={<PurchaseItems />} />
-          <Route path="/purchase-returns" element={<PurchaseReturns />} />
-          <Route path="/purchase-return-items" element={<PurchaseReturnItems />} />
-
-          <Route path="/pos" element={<PointOfSale />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/invoice-items" element={<InvoiceItems />} />
-          <Route path="/sales" element={<Sales />} />
-          <Route path="/sales-items" element={<SalesItems />} />
-          <Route path="/sales-returns" element={<SalesReturns />} />
-          <Route path="/sales-return-items" element={<SalesReturnItems />} />
-          <Route path="/hold-invoices" element={<HoldInvoices />} />
+          {/* Billing / POS */}
+          <Route path="/billing" element={<PointOfSale />} />
+          <Route path="/sales" element={<SalesHub />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/billing-counters" element={<BillingCounters />} />
           <Route path="/cash-closing" element={<CashClosing />} />
 
+          {/* Inventory */}
+          <Route path="/stock" element={<StockManagement />} />
           <Route path="/stock-movements" element={<StockMovements />} />
+
+          {/* System */}
           <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
+
+          {/* Legacy paths → new consolidated screens */}
+          <Route path="/pos" element={<Navigate to="/billing" replace />} />
+          <Route path="/products" element={<Navigate to="/catalog" replace />} />
+          <Route path="/categories" element={<Navigate to="/catalog" replace />} />
+          <Route path="/suppliers" element={<Navigate to="/catalog" replace />} />
+          <Route path="/units" element={<Navigate to="/catalog" replace />} />
+          <Route path="/purchases" element={<Navigate to="/catalog" replace />} />
+          <Route path="/barcodes" element={<Navigate to="/catalog" replace />} />
+          <Route path="/product-taxes" element={<Navigate to="/catalog" replace />} />
+          <Route path="/customers" element={<Navigate to="/billing" replace />} />
+          <Route path="/users" element={<Navigate to="/users-roles" replace />} />
+          <Route path="/roles" element={<Navigate to="/users-roles" replace />} />
+          <Route path="/invoices" element={<Navigate to="/sales" replace />} />
+          <Route path="/invoice-items" element={<Navigate to="/sales" replace />} />
+          <Route path="/sales-items" element={<Navigate to="/sales" replace />} />
+          <Route path="/sales-returns" element={<Navigate to="/sales" replace />} />
+          <Route path="/sales-return-items" element={<Navigate to="/sales" replace />} />
+          <Route path="/purchase-items" element={<Navigate to="/catalog" replace />} />
+          <Route path="/purchase-returns" element={<Navigate to="/catalog" replace />} />
+          <Route path="/purchase-return-items" element={<Navigate to="/catalog" replace />} />
+          <Route path="/hold-invoices" element={<Navigate to="/billing" replace />} />
         </Route>
       </Route>
 

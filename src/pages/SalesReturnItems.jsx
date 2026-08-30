@@ -27,6 +27,7 @@ export default function SalesReturnItems() {
     title: 'Sales Return Items',
     entityName: 'Sales Return Item',
     service: salesReturnItemsService,
+    compact: true,
     searchKeys: [],
     defaultValues: { salesReturnId: '', saleId: '', productId: '', quantity: '' },
     schema: salesReturnItemSchema,

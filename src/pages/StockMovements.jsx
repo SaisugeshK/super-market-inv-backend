@@ -5,6 +5,9 @@ import productsService from '../services/productsService';
 import { stockMovementSchema } from '../utils/validationSchemas';
 import Loader from '../components/Loader';
 
+// Backend now records movements automatically as PURCHASE_IN / SALE_OUT too.
+const isInbound = (type) => String(type).toUpperCase().includes('IN');
+
 export default function StockMovements() {
   const [products, setProducts] = useState(null);
 
@@ -21,27 +24,32 @@ export default function StockMovements() {
     title: 'Stock Movements',
     entityName: 'Stock Movement',
     service: stockMovementsService,
-    searchKeys: ['remarks'],
-    defaultValues: { productId: '', movementType: 'IN', quantity: '', remarks: '' },
+    keyField: 'movementId',
+    searchKeys: ['notes', 'productName', 'movementType'],
+    defaultValues: { productId: '', movementType: 'IN', quantity: '', notes: '' },
     schema: stockMovementSchema,
     columns: [
-      { key: 'id', label: 'ID', sortable: true },
+      { key: 'movementId', label: 'ID', sortable: true },
       {
-        key: 'productId',
+        key: 'productName',
         label: 'Product',
-        render: (row) => products.find((p) => p.id === row.productId)?.productName || row.productId,
+        render: (row) =>
+          row.productName ||
+          products.find((p) => (p.id ?? p.productId) === row.productId)?.productName ||
+          row.productId,
       },
       {
         key: 'movementType',
         label: 'Type',
         render: (row) => (
-          <span className={`badge ${row.movementType === 'IN' ? 'bg-success' : 'bg-danger'}`}>
+          <span className={`badge ${isInbound(row.movementType) ? 'bg-success' : 'bg-danger'}`}>
             {row.movementType}
           </span>
         ),
       },
       { key: 'quantity', label: 'Quantity', sortable: true },
-      { key: 'remarks', label: 'Remarks' },
+      { key: 'referenceId', label: 'Ref #' },
+      { key: 'notes', label: 'Notes' },
     ],
     fields: [
       {
@@ -51,7 +59,7 @@ export default function StockMovements() {
         required: true,
         valueKey: 'id',
         labelKey: 'productName',
-        options: products,
+        options: products.map((p) => ({ ...p, id: p.id ?? p.productId })),
       },
       {
         name: 'movementType',
@@ -59,12 +67,12 @@ export default function StockMovements() {
         type: 'select',
         required: true,
         options: [
-          { value: 'IN', label: 'Stock In' },
-          { value: 'OUT', label: 'Stock Out' },
+          { value: 'IN', label: 'Stock In (manual)' },
+          { value: 'OUT', label: 'Stock Out (manual)' },
         ],
       },
       { name: 'quantity', label: 'Quantity', type: 'number', required: true },
-      { name: 'remarks', label: 'Remarks' },
+      { name: 'notes', label: 'Notes' },
     ],
   };
 

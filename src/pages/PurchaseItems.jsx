@@ -27,6 +27,7 @@ export default function PurchaseItems() {
     title: 'Purchase Items',
     entityName: 'Purchase Item',
     service: purchaseItemsService,
+    compact: true,
     searchKeys: [],
     defaultValues: { purchaseId: '', productId: '', quantity: '', purchasePrice: '', taxAmount: '' },
     schema: purchaseItemSchema,

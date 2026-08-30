@@ -12,10 +12,12 @@ export default function Invoices() {
   useEffect(() => {
     Promise.all([customersService.getAll(), billingCountersService.getAll()]).then(
       ([customers, counters]) => {
-        setRefs({
-          customers: Array.isArray(customers) ? customers : customers?.content || [],
-          counters: Array.isArray(counters) ? counters : counters?.content || [],
-        });
+        const norm = (list) =>
+          (Array.isArray(list) ? list : list?.content || []).map((row) => ({
+            ...row,
+            id: row.id ?? row.counterId ?? row.customerId,
+          }));
+        setRefs({ customers: norm(customers), counters: norm(counters) });
       }
     );
   }, []);

@@ -6,6 +6,7 @@ const config = {
   title: 'Customers',
   entityName: 'Customer',
   service: customersService,
+  compact: true,
   searchKeys: ['customerName', 'phone', 'email'],
   defaultValues: { customerName: '', phone: '', email: '', address: '', status: 'active' },
   schema: customerSchema,

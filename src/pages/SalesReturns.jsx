@@ -25,6 +25,7 @@ export default function SalesReturns() {
     title: 'Sales Returns',
     entityName: 'Sales Return',
     service: salesReturnsService,
+    compact: true,
     searchKeys: ['reason'],
     defaultValues: {
       salesItemId: '',

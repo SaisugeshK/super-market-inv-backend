@@ -40,6 +40,7 @@ export const supplierSchema = yup.object({
   phone: yup.string().matches(phoneRegex, 'Enter a valid phone number').required('Phone is required'),
   email: yup.string().email('Enter a valid email').nullable(),
   address: yup.string().nullable(),
+  gstNumber: yup.string().nullable(),
   status: yup.string().required('Status is required'),
 });
 
@@ -143,7 +144,7 @@ export const stockMovementSchema = yup.object({
   productId: yup.number().typeError('Product is required').required('Product is required'),
   movementType: yup.string().required('Movement type is required'),
   quantity: yup.number().typeError('Enter a valid quantity').positive('Must be positive').required('Quantity is required'),
-  remarks: yup.string().nullable(),
+  notes: yup.string().nullable(),
 });
 
 export const purchaseSchema = yup.object({
@@ -151,7 +152,7 @@ export const purchaseSchema = yup.object({
   invoiceNumber: yup.string().required('Invoice number is required'),
   totalAmount: yup.number().typeError('Enter a valid amount').min(0).required('Required'),
   tax: yup.number().typeError('Enter a valid amount').min(0).required('Required'),
-  paymentStatus: yup.string().required('Payment status is required'),
+  paidAmount: yup.number().typeError('Enter a valid amount').min(0).required('Required'),
 });
 
 export const purchaseItemSchema = yup.object({
@@ -220,8 +221,19 @@ export const invoiceItemSchema = yup.object({
 });
 
 export const saleSchema = yup.object({
-  customerId: yup.number().typeError('Customer is required').required('Customer is required'),
+  // Customer is optional for walk-in supermarket billing.
+  customerId: yup
+    .number()
+    .typeError('Select a customer or leave blank')
+    .nullable()
+    .transform((v, o) => (o === '' || o == null ? null : v)),
   invoiceNumber: yup.string().nullable(),
+  counterId: yup
+    .number()
+    .typeError('Counter is required')
+    .nullable()
+    .transform((v, o) => (o === '' || o == null ? null : v)),
+  paymentMethod: yup.string().nullable(),
   totalAmount: yup.number().typeError('Enter a valid amount').min(0).nullable(),
   paymentStatus: yup.string().nullable(),
 });

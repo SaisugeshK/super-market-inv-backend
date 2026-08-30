@@ -31,6 +31,7 @@ export default function SalesItems() {
     title: 'Sales Items',
     entityName: 'Sales Item',
     service: salesItemsService,
+    compact: true,
     searchKeys: [],
     defaultValues: { saleId: '', productId: '', quantity: '' },
     schema,

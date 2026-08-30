@@ -34,6 +34,7 @@ import suppliersService from '../services/suppliersService';
 import invoicesService from '../services/invoicesService';
 import purchasesService from '../services/purchasesService';
 import salesService from '../services/salesService';
+import dashboardService from '../services/dashboardService';
 import Loader from '../components/Loader';
 import ErrorPage from './ErrorPage';
 
@@ -177,6 +178,7 @@ export default function Dashboard() {
     invoices: [],
     purchases: [],
     sales: [],
+    summary: null,
   });
 
   useEffect(() => {
@@ -189,8 +191,9 @@ export default function Dashboard() {
       invoicesService.getAll(),
       purchasesService.getAll().catch(() => []),
       salesService.getAll().catch(() => []),
+      dashboardService.getSummary().catch(() => null),
     ])
-      .then(([products, customers, suppliers, invoices, purchases, sales]) => {
+      .then(([products, customers, suppliers, invoices, purchases, sales, summary]) => {
         if (cancelled) return;
         setState({
           loading: false,
@@ -201,6 +204,7 @@ export default function Dashboard() {
           invoices: asList(invoices),
           purchases: asList(purchases),
           sales: asList(sales),
+          summary: summary || null,
         });
       })
       .catch((error) => {
@@ -211,7 +215,10 @@ export default function Dashboard() {
     return () => { cancelled = true; };
   }, []);
 
-  const { products, customers, suppliers, invoices, purchases, sales } = state;
+  const { products, customers, suppliers, invoices, purchases, sales, summary } = state;
+
+  const inr = (v) =>
+    `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const monthlyData = useMemo(() => buildMonthlyData(purchases, sales), [purchases, sales]);
 
@@ -219,7 +226,15 @@ export default function Dashboard() {
   const totalPurchases = purchases.reduce((sum, p) => sum + Number(p.totalAmount || p.grandTotal || p.total || 0), 0);
   const totalSales = sales.reduce((sum, s) => sum + Number(s.totalAmount || s.grandTotal || s.total || 0), 0);
 
-  const lowStock = products.filter((p) => Number(p.stockQuantity) <= Number(p.minimumStock));
+  const lowStock =
+    summary?.lowStockItems?.length
+      ? summary.lowStockItems.map((it) => ({
+          id: it.productId,
+          productName: it.productName,
+          stockQuantity: it.stockQuantity,
+          minimumStock: it.minimumStock,
+        }))
+      : products.filter((p) => Number(p.stockQuantity) <= Number(p.minimumStock));
   const recentInvoices = [...invoices].sort((a, b) => (b.id ?? 0) - (a.id ?? 0)).slice(0, 6);
 
   /* Pie data – distribution */
@@ -256,19 +271,19 @@ export default function Dashboard() {
       {/* ── Stat cards ── */}
       <div className="row g-3 mb-4">
         <div className="col-sm-6 col-lg-3">
-          <StatCard icon={FiBox} label="Products" value={products.length} to="/products"
+          <StatCard icon={FiBox} label="Products" value={products.length} to="/catalog"
             color="#2f6f4f" bgColor="rgba(47,111,79,0.1)" />
         </div>
         <div className="col-sm-6 col-lg-3">
-          <StatCard icon={FiUsers} label="Customers" value={customers.length} to="/customers"
+          <StatCard icon={FiUsers} label="Customers" value={customers.length} to="/billing"
             color="#3b82f6" bgColor="rgba(59,130,246,0.1)" />
         </div>
         <div className="col-sm-6 col-lg-3">
-          <StatCard icon={FiTruck} label="Suppliers" value={suppliers.length} to="/suppliers"
+          <StatCard icon={FiTruck} label="Suppliers" value={suppliers.length} to="/catalog"
             color="#f59e0b" bgColor="rgba(245,158,11,0.1)" />
         </div>
         <div className="col-sm-6 col-lg-3">
-          <StatCard icon={FiFileText} label="Invoices" value={invoices.length} to="/invoices"
+          <StatCard icon={FiFileText} label="Invoices" value={invoices.length} to="/sales"
             color="#8b5cf6" bgColor="rgba(139,92,246,0.1)" />
         </div>
       </div>
@@ -288,6 +303,28 @@ export default function Dashboard() {
             color="#10b981" bgColor="rgba(16,185,129,0.1)" />
         </div>
       </div>
+
+      {/* ── Today / outstanding KPIs (from /api/dashboard/summary) ── */}
+      {summary && (
+        <div className="row g-3 mb-4">
+          <div className="col-sm-6 col-lg-3">
+            <StatCard icon={FiDollarSign} label="Today's Sales" value={inr(summary.todayTotalSales)}
+              color="#10b981" bgColor="rgba(16,185,129,0.1)" />
+          </div>
+          <div className="col-sm-6 col-lg-3">
+            <StatCard icon={FiFileText} label="Today's Bills" value={summary.todayBillCount ?? 0}
+              color="#8b5cf6" bgColor="rgba(139,92,246,0.1)" />
+          </div>
+          <div className="col-sm-6 col-lg-3">
+            <StatCard icon={FiShoppingCart} label="Purchase Amount" value={inr(summary.totalPurchaseAmount)}
+              color="#3b82f6" bgColor="rgba(59,130,246,0.1)" />
+          </div>
+          <div className="col-sm-6 col-lg-3">
+            <StatCard icon={FiAlertTriangle} label="Supplier Pending" value={inr(summary.totalSupplierPending)}
+              to="/reports" color="#f59e0b" bgColor="rgba(245,158,11,0.1)" />
+          </div>
+        </div>
+      )}
 
       {/* ── Charts row ── */}
       <div className="row g-3 mb-4">

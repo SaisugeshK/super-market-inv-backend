@@ -6,6 +6,7 @@ const config = {
   title: 'Categories',
   entityName: 'Category',
   service: categoriesService,
+  compact: true,
   searchKeys: ['categoryName'],
   defaultValues: { categoryName: '', description: '', status: 'ACTIVE' },
   schema: categorySchema,

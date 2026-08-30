@@ -39,6 +39,7 @@ export default function CrudPage({ config }) {
     schema,
     searchKeys = [],
     defaultValues = {},
+    compact = false,
   } = config;
 
   const { items, isLoading, isSaving, load, create, update, remove } = useCrud(service, {
@@ -135,7 +136,7 @@ export default function CrudPage({ config }) {
   return (
     <div>
       <div className="erp-page-header">
-        <h1 className="erp-page-title">{title}</h1>
+        {compact ? <div /> : <h1 className="erp-page-title">{title}</h1>}
         <div className="d-flex align-items-center gap-2">
           {searchKeys.length > 0 && (
             <SearchBar
