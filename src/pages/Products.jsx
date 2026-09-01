@@ -323,8 +323,11 @@ export default function Products() {
   return (
     <div>
       <div className="erp-page-header">
-        <div />
-        <div className="d-flex align-items-center gap-2">
+        <div>
+          <h1 className="erp-page-title">Products</h1>
+          <p className="erp-page-subtitle">Everything you sell — price, tax and stock</p>
+        </div>
+        <div className="d-flex align-items-center gap-2 flex-nowrap">
           <SearchBar
             value={search}
             onChange={(v) => {
@@ -337,7 +340,7 @@ export default function Products() {
             className="btn btn-primary d-flex align-items-center gap-1"
             onClick={openCreate}
           >
-            <FiPlus /> Add Product
+            <FiPlus /> Add product
           </button>
         </div>
       </div>

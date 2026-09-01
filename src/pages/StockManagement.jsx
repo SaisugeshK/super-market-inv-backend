@@ -3,6 +3,7 @@ import { FiBox, FiAlertTriangle, FiDollarSign, FiRefreshCw } from 'react-icons/f
 import reportsService from '../services/reportsService';
 import stockMovementsService from '../services/stockMovementsService';
 import SearchBar from '../components/SearchBar';
+import PageToolbar from '../components/PageToolbar';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
 
@@ -36,7 +37,7 @@ function Tile({ icon: Icon, label, value, tone = '#2f6f4f', bg = 'rgba(47,111,79
   );
 }
 
-export default function StockManagement() {
+export default function StockManagement({ compact = false }) {
   const [rows, setRows] = useState(null);
   const [movements, setMovements] = useState([]);
   const [error, setError] = useState(false);
@@ -91,20 +92,31 @@ export default function StockManagement() {
   if (error) return <EmptyState title="Could not load stock" message="The stock report endpoint returned an error." />;
   if (!rows) return <Loader label="Loading stock..." />;
 
+  const toolbar = (
+    <>
+      <SearchBar value={search} onChange={setSearch} placeholder="Search product or barcode..." />
+      <button
+        className="btn btn-outline-secondary d-flex align-items-center gap-1"
+        onClick={() => setReloadKey((k) => k + 1)}
+      >
+        <FiRefreshCw size={14} /> Refresh
+      </button>
+    </>
+  );
+
   return (
     <div>
-      <div className="erp-page-header">
-        <h1 className="erp-page-title">Stock Management</h1>
-        <div className="d-flex align-items-center gap-2">
-          <SearchBar value={search} onChange={setSearch} placeholder="Search product or barcode..." />
-          <button
-            className="btn btn-outline-secondary d-flex align-items-center gap-1"
-            onClick={() => setReloadKey((k) => k + 1)}
-          >
-            <FiRefreshCw size={14} /> Refresh
-          </button>
+      {compact ? (
+        <PageToolbar>{toolbar}</PageToolbar>
+      ) : (
+        <div className="erp-page-header">
+          <div>
+            <h1 className="erp-page-title">Stock</h1>
+            <p className="erp-page-subtitle">On-hand quantity per product — updated automatically</p>
+          </div>
+          <div className="d-flex align-items-center gap-2 flex-nowrap">{toolbar}</div>
         </div>
-      </div>
+      )}
 
       <div className="alert alert-light border small">
         Stock is <strong>calculated automatically</strong> — Purchases &amp; Sales Returns add stock,

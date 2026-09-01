@@ -15,6 +15,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import Loader from '../components/Loader';
 
 const emptyLine = () => ({ productId: '', quantity: 1, purchasePrice: 0, taxAmount: 0, unit: '' });
+const inr = (v) => `₹${Number(v || 0).toLocaleString('en-IN')}`;
 
 // Same rule the backend uses in Purchase @PrePersist.
 const deriveStatus = (total, paid) => {
@@ -25,13 +26,13 @@ const deriveStatus = (total, paid) => {
   return 'PARTIALLY_PAID';
 };
 
-const STATUS_BADGE = {
-  FULLY_PAID: 'bg-success',
-  PARTIALLY_PAID: 'bg-warning text-dark',
-  PENDING: 'bg-danger',
+const STATUS_PILL = {
+  FULLY_PAID: 'is-green',
+  PARTIALLY_PAID: 'is-amber',
+  PENDING: 'is-red',
 };
 
-export default function Purchases({ compact = false }) {
+export default function Purchases() {
   const { user } = useAuth();
   const { items, isLoading, isSaving, create, remove, load } = useCrud(purchasesService, {
     entityName: 'Purchase',
@@ -306,9 +307,12 @@ export default function Purchases({ compact = false }) {
   return (
     <div>
       <div className="erp-page-header">
-        {compact ? <div /> : <h1 className="erp-page-title">Purchases</h1>}
+        <div>
+          <h1 className="erp-page-title">Purchases</h1>
+          <p className="erp-page-subtitle">Stock coming in from suppliers, and what you still owe</p>
+        </div>
         <button className="btn btn-primary d-flex align-items-center gap-1" onClick={openCreate}>
-          <FiPlus /> New Purchase
+          <FiPlus /> New purchase
         </button>
       </div>
 
@@ -317,41 +321,35 @@ export default function Purchases({ compact = false }) {
         rows={items}
         keyField="purchaseId"
         onDelete={setDeletingRow}
+        rowActions={(row) => (
+          <button
+            className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+            title="Return goods to supplier"
+            onClick={() => openReturn(row)}
+          >
+            <FiRotateCcw size={13} /> Return
+          </button>
+        )}
         emptyTitle="No purchases yet"
-        emptyMessage='Click "New Purchase" to record stock coming in from a supplier.'
+        emptyMessage='Click "New purchase" to record stock coming in from a supplier.'
         columns={[
-          { key: 'purchaseId', label: 'ID', sortable: true },
           { key: 'invoiceNumber', label: 'Invoice #', sortable: true },
           { key: 'supplier', label: 'Supplier', render: supplierName },
-          { key: 'totalAmount', label: 'Total', sortable: true },
-          { key: 'tax', label: 'Tax' },
+          { key: 'totalAmount', label: 'Total', sortable: true, render: (r) => inr(r.totalAmount) },
           {
             key: 'returnedAmount',
             label: 'Returned',
-            render: (row) => Number(row.returnedAmount || 0).toFixed(2),
+            render: (row) => inr(row.returnedAmount),
           },
-          { key: 'paidAmount', label: 'Paid' },
-          { key: 'pendingAmount', label: 'Pending' },
+          { key: 'paidAmount', label: 'Paid', render: (r) => inr(r.paidAmount) },
+          { key: 'pendingAmount', label: 'Pending', render: (r) => inr(r.pendingAmount) },
           {
             key: 'paymentStatus',
             label: 'Status',
             render: (row) => (
-              <span className={`badge ${STATUS_BADGE[row.paymentStatus] || 'bg-secondary'}`}>
-                {row.paymentStatus}
+              <span className={`erp-pill ${STATUS_PILL[row.paymentStatus] || ''}`}>
+                {(row.paymentStatus || '').replace('_', ' ').toLowerCase()}
               </span>
-            ),
-          },
-          {
-            key: 'return',
-            label: 'Return',
-            render: (row) => (
-              <button
-                className="btn btn-sm btn-outline-warning d-flex align-items-center gap-1"
-                title="Return goods to supplier"
-                onClick={() => openReturn(row)}
-              >
-                <FiRotateCcw size={13} /> Return
-              </button>
             ),
           },
         ]}
@@ -529,7 +527,9 @@ export default function Purchases({ compact = false }) {
             </div>
             <div className="d-flex justify-content-between mt-1">
               <span>Status</span>
-              <span className={`badge ${STATUS_BADGE[totals.status]}`}>{totals.status}</span>
+              <span className={`erp-pill ${STATUS_PILL[totals.status] || ''}`}>
+                {totals.status.replace('_', ' ').toLowerCase()}
+              </span>
             </div>
           </div>
         </div>

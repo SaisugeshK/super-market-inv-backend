@@ -16,10 +16,16 @@ export default function DataTable({
   isLoading = false,
   onEdit,
   onDelete,
+  rowActions, // (row) => JSX, rendered in the Actions cell before edit/delete
   keyField = 'id',
   emptyTitle = 'No records found',
   emptyMessage = 'Try adjusting your filters or add a new record.',
 }) {
+  // Raw DB primary keys are gappy and confusing — never show an "ID" column.
+  const visibleColumns = useMemo(
+    () => columns.filter((c) => c.label !== 'ID' && c.label !== 'Id'),
+    [columns]
+  );
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
 
@@ -51,14 +57,14 @@ export default function DataTable({
     }
   };
 
-  const showActions = Boolean(onEdit || onDelete);
+  const showActions = Boolean(onEdit || onDelete || rowActions);
 
   return (
     <div className="table-responsive erp-card">
       <table className="table table-hover align-middle mb-0">
         <thead>
           <tr>
-            {columns.map((col) => (
+            {visibleColumns.map((col) => (
               <th
                 key={col.key}
                 role={col.sortable ? 'button' : undefined}
@@ -73,15 +79,17 @@ export default function DataTable({
                 )}
               </th>
             ))}
-            {showActions && <th style={{ width: 110 }}>Actions</th>}
+            {showActions && <th style={{ whiteSpace: 'nowrap' }} className="text-end">Actions</th>}
           </tr>
         </thead>
         <tbody>
-          {isLoading && <SkeletonTable rows={6} columns={columns.length + (showActions ? 1 : 0)} />}
+          {isLoading && (
+            <SkeletonTable rows={6} columns={visibleColumns.length + (showActions ? 1 : 0)} />
+          )}
 
           {!isLoading && sortedRows.length === 0 && (
             <tr>
-              <td colSpan={columns.length + (showActions ? 1 : 0)} className="p-0 border-0">
+              <td colSpan={visibleColumns.length + (showActions ? 1 : 0)} className="p-0 border-0">
                 <EmptyState title={emptyTitle} message={emptyMessage} />
               </td>
             </tr>
@@ -90,12 +98,13 @@ export default function DataTable({
           {!isLoading &&
             sortedRows.map((row) => (
               <tr key={row[keyField] ?? JSON.stringify(row)}>
-                {columns.map((col) => (
+                {visibleColumns.map((col) => (
                   <td key={col.key}>{col.render ? col.render(row) : row[col.key]}</td>
                 ))}
                 {showActions && (
                   <td>
-                    <div className="d-flex gap-2">
+                    <div className="d-flex gap-2 align-items-center justify-content-end">
+                      {rowActions && rowActions(row)}
                       {onEdit && (
                         <button
                           className="btn btn-sm btn-outline-primary"

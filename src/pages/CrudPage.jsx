@@ -10,6 +10,7 @@ import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 import FormInput from '../components/FormInput';
 import FormSelect from '../components/FormSelect';
+import PageToolbar from '../components/PageToolbar';
 
 const PAGE_SIZE = 8;
 
@@ -133,26 +134,34 @@ export default function CrudPage({ config }) {
     setDeletingRow(null);
   };
 
+  const toolbar = (
+    <>
+      {searchKeys.length > 0 && (
+        <SearchBar
+          value={search}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+          placeholder={`Search ${title.toLowerCase()}...`}
+        />
+      )}
+      <button className="btn btn-primary d-flex align-items-center gap-1" onClick={openCreate}>
+        <FiPlus /> Add {entityName}
+      </button>
+    </>
+  );
+
   return (
     <div>
-      <div className="erp-page-header">
-        {compact ? <div /> : <h1 className="erp-page-title">{title}</h1>}
-        <div className="d-flex align-items-center gap-2">
-          {searchKeys.length > 0 && (
-            <SearchBar
-              value={search}
-              onChange={(v) => {
-                setSearch(v);
-                setPage(1);
-              }}
-              placeholder={`Search ${title.toLowerCase()}...`}
-            />
-          )}
-          <button className="btn btn-primary d-flex align-items-center gap-1" onClick={openCreate}>
-            <FiPlus /> Add {entityName}
-          </button>
+      {compact ? (
+        <PageToolbar>{toolbar}</PageToolbar>
+      ) : (
+        <div className="erp-page-header">
+          <h1 className="erp-page-title">{title}</h1>
+          <div className="d-flex align-items-center gap-2 flex-nowrap">{toolbar}</div>
         </div>
-      </div>
+      )}
 
       <DataTable
         columns={columns}

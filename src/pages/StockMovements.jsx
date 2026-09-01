@@ -24,6 +24,7 @@ export default function StockMovements() {
     title: 'Stock Movements',
     entityName: 'Stock Movement',
     service: stockMovementsService,
+    compact: true,
     keyField: 'movementId',
     searchKeys: ['notes', 'productName', 'movementType'],
     defaultValues: { productId: '', movementType: 'IN', quantity: '', notes: '' },

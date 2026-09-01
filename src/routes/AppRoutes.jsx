@@ -6,7 +6,9 @@ import Login from '../pages/Login';
 import Dashboard from '../pages/Dashboard';
 import NotFound from '../pages/NotFound';
 
-import Catalog from '../pages/Catalog';
+import Products from '../pages/Products';
+import Suppliers from '../pages/Suppliers';
+import Purchases from '../pages/Purchases';
 import UsersRoles from '../pages/UsersRoles';
 
 import PointOfSale from '../pages/PointOfSale';
@@ -15,8 +17,7 @@ import Payments from '../pages/Payments';
 import BillingCounters from '../pages/BillingCounters';
 import CashClosing from '../pages/CashClosing';
 
-import StockManagement from '../pages/StockManagement';
-import StockMovements from '../pages/StockMovements';
+import StockPage from '../pages/StockPage';
 import Reports from '../pages/Reports';
 
 export default function AppRoutes() {
@@ -28,8 +29,14 @@ export default function AppRoutes() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
 
-          {/* Catalog (products, categories, units, suppliers, purchases as tabs) */}
-          <Route path="/catalog" element={<Catalog />} />
+          {/* Catalog & stock */}
+          <Route path="/products" element={<Products />} />
+          <Route path="/stock" element={<StockPage />} />
+          <Route path="/stock-movements" element={<Navigate to="/stock" replace />} />
+
+          {/* Buying */}
+          <Route path="/suppliers" element={<Suppliers />} />
+          <Route path="/purchases" element={<Purchases />} />
 
           {/* People */}
           <Route path="/users-roles" element={<UsersRoles />} />
@@ -41,22 +48,16 @@ export default function AppRoutes() {
           <Route path="/billing-counters" element={<BillingCounters />} />
           <Route path="/cash-closing" element={<CashClosing />} />
 
-          {/* Inventory */}
-          <Route path="/stock" element={<StockManagement />} />
-          <Route path="/stock-movements" element={<StockMovements />} />
-
           {/* System */}
           <Route path="/reports" element={<Reports />} />
 
-          {/* Legacy paths → new consolidated screens */}
+          {/* Legacy paths → current screens */}
           <Route path="/pos" element={<Navigate to="/billing" replace />} />
-          <Route path="/products" element={<Navigate to="/catalog" replace />} />
-          <Route path="/categories" element={<Navigate to="/catalog" replace />} />
-          <Route path="/suppliers" element={<Navigate to="/catalog" replace />} />
-          <Route path="/units" element={<Navigate to="/catalog" replace />} />
-          <Route path="/purchases" element={<Navigate to="/catalog" replace />} />
-          <Route path="/barcodes" element={<Navigate to="/catalog" replace />} />
-          <Route path="/product-taxes" element={<Navigate to="/catalog" replace />} />
+          <Route path="/catalog" element={<Navigate to="/products" replace />} />
+          <Route path="/categories" element={<Navigate to="/products" replace />} />
+          <Route path="/units" element={<Navigate to="/products" replace />} />
+          <Route path="/barcodes" element={<Navigate to="/products" replace />} />
+          <Route path="/product-taxes" element={<Navigate to="/products" replace />} />
           <Route path="/customers" element={<Navigate to="/billing" replace />} />
           <Route path="/users" element={<Navigate to="/users-roles" replace />} />
           <Route path="/roles" element={<Navigate to="/users-roles" replace />} />
@@ -65,9 +66,9 @@ export default function AppRoutes() {
           <Route path="/sales-items" element={<Navigate to="/sales" replace />} />
           <Route path="/sales-returns" element={<Navigate to="/sales" replace />} />
           <Route path="/sales-return-items" element={<Navigate to="/sales" replace />} />
-          <Route path="/purchase-items" element={<Navigate to="/catalog" replace />} />
-          <Route path="/purchase-returns" element={<Navigate to="/catalog" replace />} />
-          <Route path="/purchase-return-items" element={<Navigate to="/catalog" replace />} />
+          <Route path="/purchase-items" element={<Navigate to="/purchases" replace />} />
+          <Route path="/purchase-returns" element={<Navigate to="/purchases" replace />} />
+          <Route path="/purchase-return-items" element={<Navigate to="/purchases" replace />} />
           <Route path="/hold-invoices" element={<Navigate to="/billing" replace />} />
         </Route>
       </Route>

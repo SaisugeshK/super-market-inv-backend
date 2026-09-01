@@ -17,10 +17,20 @@ export default function useCrud(service, options = {}) {
 
   const normalize = (data) => {
     // Spring Boot paginated responses often come back as { content: [...] }
-    if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data.content)) return data.content;
-    if (data && Array.isArray(data.data)) return data.data;
-    return data ? [data] : [];
+    let arr;
+    if (Array.isArray(data)) arr = data;
+    else if (data && Array.isArray(data.content)) arr = data.content;
+    else if (data && Array.isArray(data.data)) arr = data.data;
+    else arr = data ? [data] : [];
+
+    // Newest first everywhere — a freshly added record lands on top.
+    const idOf = (r) => {
+      if (r == null || typeof r !== 'object') return 0;
+      if (r.id != null) return Number(r.id) || 0;
+      const k = Object.keys(r).find((key) => key !== 'id' && /Id$/.test(key));
+      return k ? Number(r[k]) || 0 : 0;
+    };
+    return [...arr].sort((a, b) => idOf(b) - idOf(a));
   };
 
   const load = useCallback(

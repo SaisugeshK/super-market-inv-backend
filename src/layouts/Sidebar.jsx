@@ -1,50 +1,41 @@
 import { NavLink } from 'react-router-dom';
-import {
-  FiGrid,
-  FiUsers,
-  FiBox,
-  FiActivity,
-  FiPieChart,
-  FiMonitor,
-  FiDollarSign,
-  FiCreditCard,
-  FiLayers,
-  FiShoppingCart,
-} from 'react-icons/fi';
 
 const NAV_GROUPS = [
   {
     title: 'Overview',
-    items: [{ to: '/', label: 'Dashboard', icon: FiGrid, end: true }],
+    items: [{ to: '/', label: 'Dashboard', end: true }],
   },
   {
-    title: 'Catalog',
-    items: [{ to: '/catalog', label: 'Catalog', icon: FiBox }],
+    title: 'Catalog & stock',
+    items: [
+      { to: '/products', label: 'Products' },
+      { to: '/stock', label: 'Stock' },
+    ],
+  },
+  {
+    title: 'Buying',
+    items: [
+      { to: '/suppliers', label: 'Suppliers' },
+      { to: '/purchases', label: 'Purchases' },
+    ],
+  },
+  {
+    title: 'Billing',
+    items: [
+      { to: '/billing', label: 'New sale' },
+      { to: '/sales', label: 'Sales' },
+      { to: '/payments', label: 'Payments' },
+      { to: '/billing-counters', label: 'Counters' },
+      { to: '/cash-closing', label: 'Cash closing' },
+    ],
   },
   {
     title: 'People',
-    items: [{ to: '/users-roles', label: 'Users & Roles', icon: FiUsers }],
-  },
-  {
-    title: 'Billing / POS',
-    items: [
-      { to: '/billing', label: 'Billing / New Sale', icon: FiMonitor },
-      { to: '/sales', label: 'Sales', icon: FiShoppingCart },
-      { to: '/payments', label: 'Payments', icon: FiCreditCard },
-      { to: '/billing-counters', label: 'Billing Counters', icon: FiMonitor },
-      { to: '/cash-closing', label: 'Cash Closing', icon: FiDollarSign },
-    ],
-  },
-  {
-    title: 'Inventory',
-    items: [
-      { to: '/stock', label: 'Stock Management', icon: FiLayers },
-      { to: '/stock-movements', label: 'Stock Movements', icon: FiActivity },
-    ],
+    items: [{ to: '/users-roles', label: 'Users & roles' }],
   },
   {
     title: 'System',
-    items: [{ to: '/reports', label: 'Reports', icon: FiPieChart }],
+    items: [{ to: '/reports', label: 'Reports' }],
   },
 ];
 
@@ -52,12 +43,12 @@ export default function Sidebar({ collapsed, onNavigate }) {
   return (
     <aside className={`erp-sidebar ${collapsed ? 'erp-sidebar-collapsed' : ''}`}>
       <div className="erp-sidebar-brand">
-        <FiGrid className="flex-shrink-0" size={22} />
-        {!collapsed && <span>Supermarket ERP</span>}
+        <span className="erp-brand-mark">F</span>
+        {!collapsed && <span>Freshmart</span>}
       </div>
       <nav className="erp-sidebar-nav">
         {NAV_GROUPS.map((group) => (
-          <div key={group.title} className="mb-3">
+          <div key={group.title} className="mb-1">
             {!collapsed && <div className="erp-sidebar-group-title">{group.title}</div>}
             {group.items.map((item) => (
               <NavLink
@@ -68,7 +59,7 @@ export default function Sidebar({ collapsed, onNavigate }) {
                 className={({ isActive }) => `erp-sidebar-link ${isActive ? 'active' : ''}`}
                 title={collapsed ? item.label : undefined}
               >
-                <item.icon size={16} className="flex-shrink-0" />
+                <span className="erp-dot" />
                 {!collapsed && <span>{item.label}</span>}
               </NavLink>
             ))}
