@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import {
   FiSearch,
   FiTrash2,
   FiPrinter,
+  FiDownload,
   FiShoppingCart,
   FiUserPlus,
   FiPause,
@@ -21,6 +23,8 @@ import holdInvoicesService from "../services/holdInvoicesService";
 import { useAuth } from "../context/AuthContext";
 import Loader from "../components/Loader";
 import Modal from "../components/Modal";
+import InvoiceDocument from "../components/InvoiceDocument";
+import { downloadInvoicePdf } from "../utils/invoicePdf";
 
 const asList = (data) =>
   Array.isArray(data) ? data : data?.content || data?.data || [];
@@ -378,6 +382,23 @@ export default function PointOfSale() {
       setIsSubmitting(false);
     }
   };
+
+  // Single source of truth for the invoice — feeds the on-screen preview,
+  // the print portal and the downloadable PDF alike.
+  const invoiceData = receipt
+    ? {
+        invoiceNumber: receipt.invoiceNumber,
+        customerName: receipt.customer?.customerName,
+        timestamp: receipt.timestamp,
+        counterName: counters.find((c) => (c.id ?? c.counterId) === Number(counterId))
+          ?.counterName,
+        cashierName: user?.name || user?.username || user?.email,
+        items: receipt.cart,
+        totals: receipt.totals,
+        paymentMethod: receipt.paymentMethod,
+        paidAmount: receipt.paidAmount,
+      }
+    : null;
 
   if (!customers || !products) return <Loader label="Loading POS..." />;
 
@@ -869,6 +890,7 @@ export default function PointOfSale() {
       <Modal
         show={Boolean(receipt)}
         title="Sale Completed"
+        size="modal-lg"
         onClose={() => setReceipt(null)}
         footer={
           <>
@@ -879,6 +901,12 @@ export default function PointOfSale() {
               Close
             </button>
             <button
+              className="btn btn-outline-primary d-flex align-items-center gap-1"
+              onClick={() => invoiceData && downloadInvoicePdf(invoiceData)}
+            >
+              <FiDownload /> Download PDF
+            </button>
+            <button
               className="btn btn-primary d-flex align-items-center gap-1"
               onClick={() => window.print()}
             >
@@ -887,45 +915,19 @@ export default function PointOfSale() {
           </>
         }
       >
-        {receipt && (
-          <div id="receipt-print">
-            <p className="mb-1">
-              <strong>Invoice:</strong> {receipt.invoiceNumber || "—"}
-            </p>
-            <p className="mb-1">
-              <strong>Customer:</strong>{" "}
-              {receipt.customer?.customerName || "Walk-in"}
-            </p>
-            <p className="mb-2 text-muted small">{receipt.timestamp}</p>
-            <table className="table table-sm">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {receipt.cart.map((l) => (
-                  <tr key={l.productId}>
-                    <td>{l.productName}</td>
-                    <td>{l.quantity}</td>
-                    <td>{Number(l.sellingPrice).toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="d-flex justify-content-between">
-              <span>Grand Total</span>
-              <strong>{receipt.totals.grandTotal.toFixed(2)}</strong>
-            </div>
-            <div className="d-flex justify-content-between">
-              <span>Paid ({receipt.paymentMethod})</span>
-              <strong>{receipt.paidAmount.toFixed(2)}</strong>
-            </div>
-          </div>
-        )}
+        {invoiceData && <InvoiceDocument {...invoiceData} />}
       </Modal>
+
+      {/* Portaled outside the modal so print pagination is based on this
+          element's own natural height, not the modal's fixed/flex layout
+          (see #receipt-print-root in index.css). */}
+      {invoiceData &&
+        createPortal(
+          <div id="receipt-print-root">
+            <InvoiceDocument {...invoiceData} id="receipt-print" />
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

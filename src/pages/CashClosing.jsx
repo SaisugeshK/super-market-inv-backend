@@ -1,29 +1,73 @@
-import CrudPage from './CrudPage';
+import { useState } from 'react';
+import { FiPlus } from 'react-icons/fi';
+import useCrud from '../hooks/useCrud';
 import cashClosingService from '../services/cashClosingService';
-import { cashClosingSchema } from '../utils/validationSchemas';
+import DataTable from '../components/DataTable';
+import CashClosingModal from '../components/cashClosing/CashClosingModal';
+import { formatCurrency, formatDateTime } from '../utils/format';
 
-const config = {
-  title: 'Cash Closing',
-  entityName: 'Cash Closing',
-  service: cashClosingService,
-  searchKeys: [],
-  defaultValues: { counterId: '', openingCash: '', closingCash: '', totalSales: '' },
-  schema: cashClosingSchema,
-  columns: [
-    { key: 'id', label: 'ID', sortable: true },
-    { key: 'counterId', label: 'Counter ID', sortable: true },
-    { key: 'openingCash', label: 'Opening Cash' },
-    { key: 'closingCash', label: 'Closing Cash' },
-    { key: 'totalSales', label: 'Total Sales' },
-  ],
-  fields: [
-    { name: 'counterId', label: 'Counter ID', type: 'number', required: true },
-    { name: 'openingCash', label: 'Opening Cash', type: 'number', step: '0.01', required: true },
-    { name: 'closingCash', label: 'Closing Cash', type: 'number', step: '0.01', required: true },
-    { name: 'totalSales', label: 'Total Sales', type: 'number', step: '0.01', required: true },
-  ],
+const STATUS_CLASS = {
+  CLOSED: 'bg-success',
+  PENDING_APPROVAL: 'bg-warning text-dark',
 };
 
 export default function CashClosing() {
-  return <CrudPage config={config} />;
+  const { items, isLoading, isSaving, create } = useCrud(cashClosingService, {
+    entityName: 'Cash Closing',
+  });
+
+  const [showForm, setShowForm] = useState(false);
+
+  const handleSubmit = async (payload) => {
+    await create(payload); // backend recalculates + stores the full snapshot
+    setShowForm(false);
+  };
+
+  return (
+    <div>
+      <div className="erp-page-header">
+        <div>
+          <h1 className="erp-page-title">Cash Closing</h1>
+          <p className="erp-page-subtitle">Close out a counter's cash and digital payment sessions</p>
+        </div>
+        <button className="btn btn-primary d-flex align-items-center gap-1" onClick={() => setShowForm(true)}>
+          <FiPlus /> Add Cash Closing
+        </button>
+      </div>
+
+      <DataTable
+        columns={[
+          {
+            key: 'counter',
+            label: 'Counter',
+            render: (r) => r.counter?.name || r.counterName || `#${r.counterId}`,
+          },
+          { key: 'openingTime', label: 'Opening', render: (r) => formatDateTime(r.openingTime) },
+          { key: 'closingTime', label: 'Closing', render: (r) => formatDateTime(r.closingTime) },
+          { key: 'totalSales', label: 'Total Sales', render: (r) => formatCurrency(r.totalSales) },
+          {
+            key: 'status',
+            label: 'Status',
+            render: (r) => (
+              <span className={`badge ${STATUS_CLASS[r.status] || 'bg-secondary'}`}>
+                {r.status || 'CLOSED'}
+              </span>
+            ),
+          },
+        ]}
+        rows={items}
+        isLoading={isLoading}
+        keyField="id"
+        emptyTitle="No cash closings yet"
+        emptyMessage='Click "Add Cash Closing" to close out a counter session.'
+      />
+
+      <CashClosingModal
+        show={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={handleSubmit}
+        isSaving={isSaving}
+      />
+    </div>
+  );
 }

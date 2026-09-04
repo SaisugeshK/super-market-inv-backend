@@ -106,13 +106,6 @@ export const billingCounterSchema = yup.object({
   status: yup.string().required('Status is required'),
 });
 
-export const cashClosingSchema = yup.object({
-  counterId: yup.number().typeError('Counter is required').required('Counter is required'),
-  openingCash: yup.number().typeError('Enter a valid amount').min(0).required('Required'),
-  closingCash: yup.number().typeError('Enter a valid amount').min(0).required('Required'),
-  totalSales: yup.number().typeError('Enter a valid amount').min(0).required('Required'),
-});
-
 export const productTaxSchema = yup.object({
   productId: yup.number().typeError('Product is required').required('Product is required'),
   taxName: yup.string().required('Tax name is required'),

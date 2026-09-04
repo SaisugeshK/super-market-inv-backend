@@ -514,6 +514,104 @@ body {
   font-family: var(--erp-font-head);
 }
 
+/* ── Invoice / receipt document ────────────────────────────
+   Shared layout for InvoiceDocument.jsx — the "Sale Completed" preview
+   and the printed invoice both render this. */
+.invoice-doc {
+  background: #fff;
+  color: var(--erp-ink);
+  font-size: 13px;
+}
+.invoice-doc__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid var(--erp-primary);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+.invoice-doc__brand {
+  font-family: var(--erp-font-head);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--erp-primary-dark);
+}
+.invoice-doc__tagline {
+  color: var(--erp-muted);
+  font-size: 12px;
+}
+.invoice-doc__title {
+  font-family: var(--erp-font-head);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: 14px;
+}
+.invoice-doc__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.invoice-doc__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+.invoice-doc__table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--erp-muted);
+  background: var(--erp-sidebar-bg);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--erp-border);
+}
+.invoice-doc__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--erp-border);
+}
+.invoice-doc__totals {
+  max-width: 280px;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.invoice-doc__grand-total {
+  font-family: var(--erp-font-head);
+  font-size: 17px;
+  font-weight: 700;
+  border-top: 1px solid var(--erp-border);
+  padding-top: 8px;
+  margin-top: 2px;
+}
+.invoice-doc__footer {
+  margin-top: 28px;
+  text-align: center;
+  color: var(--erp-muted);
+  font-size: 12px;
+}
+
+/* ── Invoice print ──────────────────────────────────────────
+   Print Invoice (Billing) triggers window.print() on the whole page.
+   The invoice is portaled to a dedicated #receipt-print-root, a direct
+   child of <body> outside the modal's fixed/flex layout, so pagination
+   is based on its own natural height — not the modal's. Everything else
+   is hidden while printing. */
+#receipt-print-root {
+  display: none;
+}
+@media print {
+  body > *:not(#receipt-print-root) {
+    display: none !important;
+  }
+  #receipt-print-root {
+    display: block !important;
+    padding: 24px;
+  }
+}
+
 /* misc */
 .erp-link-strong {
   color: var(--erp-primary-dark);

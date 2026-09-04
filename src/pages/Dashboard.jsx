@@ -118,7 +118,17 @@ function StatCard({ icon: Icon, label, value, to, color, bgColor, trend }) {
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, color: '#7a9490', fontWeight: 500, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#1b2e28', lineHeight: 1.1 }}>{value}</div>
+        <div
+          style={{
+            fontSize: 'clamp(1.1rem, 1.6vw + 0.55rem, 1.625rem)',
+            fontWeight: 800,
+            color: '#1b2e28',
+            lineHeight: 1.15,
+            wordBreak: 'break-word',
+          }}
+        >
+          {value}
+        </div>
       </div>
       {trend !== undefined && (
         <div style={{ fontSize: 12, color: trend >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -215,16 +225,22 @@ export default function Dashboard() {
     return () => { cancelled = true; };
   }, []);
 
-  const { products, customers, suppliers, invoices, purchases, sales, summary } = state;
+  const { products, customers, suppliers, purchases, sales, summary } = state;
 
   const inr = (v) =>
     `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const monthlyData = useMemo(() => buildMonthlyData(purchases, sales), [purchases, sales]);
 
-  const totalRevenue = invoices.reduce((sum, inv) => sum + Number(inv.grandTotal || 0), 0);
+  // Billing/POS writes every sale through /sales (invoiceNumber included) —
+  // the separate /invoices entity is a distinct, unused CRUD module, so it
+  // stays empty. "Invoiced" revenue/count/recent-list all read from sales
+  // instead, otherwise they show 0 / empty even with real sales on record.
   const totalPurchases = purchases.reduce((sum, p) => sum + Number(p.totalAmount || p.grandTotal || p.total || 0), 0);
   const totalSales = sales.reduce((sum, s) => sum + Number(s.totalAmount || s.grandTotal || s.total || 0), 0);
+  const totalRevenue = sales
+    .filter((s) => s.paymentStatus === 'PAID')
+    .reduce((sum, s) => sum + Number(s.totalAmount || s.grandTotal || s.total || 0), 0);
 
   const lowStock =
     summary?.lowStockItems?.length
@@ -235,7 +251,15 @@ export default function Dashboard() {
           minimumStock: it.minimumStock,
         }))
       : products.filter((p) => Number(p.stockQuantity) <= Number(p.minimumStock));
-  const recentInvoices = [...invoices].sort((a, b) => (b.id ?? 0) - (a.id ?? 0)).slice(0, 6);
+  const recentInvoices = [...sales]
+    .sort((a, b) => (b.saleId ?? b.id ?? 0) - (a.saleId ?? a.id ?? 0))
+    .slice(0, 6)
+    .map((s) => ({
+      id: s.saleId ?? s.id,
+      invoiceNumber: s.invoiceNumber,
+      grandTotal: s.totalAmount ?? s.grandTotal ?? s.total,
+      paymentStatus: s.paymentStatus,
+    }));
 
   /* Pie data – distribution */
   const purchaseVsSalesData = [
@@ -283,7 +307,7 @@ export default function Dashboard() {
             color="#f59e0b" bgColor="rgba(245,158,11,0.1)" />
         </div>
         <div className="col-sm-6 col-lg-3">
-          <StatCard icon={FiFileText} label="Invoices" value={invoices.length} to="/sales"
+          <StatCard icon={FiFileText} label="Invoices" value={sales.length} to="/sales"
             color="#8b5cf6" bgColor="rgba(139,92,246,0.1)" />
         </div>
       </div>

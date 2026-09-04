@@ -26,7 +26,8 @@ const PAGE_SIZE = 8;
  *   fields: [{ name, label, type: 'text'|'number'|'select'|'textarea', required, options, valueKey, labelKey }],
  *   schema: yup schema,
  *   searchKeys: [field names to filter on],
- *   defaultValues: {}
+ *   defaultValues: {},
+ *   rowActions: (row) => JSX, rendered in the Actions cell before edit/delete
  * }
  */
 export default function CrudPage({ config }) {
@@ -41,6 +42,7 @@ export default function CrudPage({ config }) {
     searchKeys = [],
     defaultValues = {},
     compact = false,
+    rowActions,
   } = config;
 
   const { items, isLoading, isSaving, load, create, update, remove } = useCrud(service, {
@@ -169,6 +171,7 @@ export default function CrudPage({ config }) {
         isLoading={isLoading}
         onEdit={openEdit}
         onDelete={setDeletingRow}
+        rowActions={rowActions}
         keyField={keyField}
         emptyTitle={`No ${title.toLowerCase()} yet`}
         emptyMessage={`Click "Add ${entityName}" to create your first record.`}
