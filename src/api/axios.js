@@ -95,8 +95,12 @@ api.interceptors.response.use(
     const { status, data } = error.response;
     const serverMessage = data?.message || data?.error;
 
+    // A 401 from the auth endpoints themselves is a failed login/refresh, not an
+    // expired session — let the caller handle it, don't trigger the refresh/redirect.
+    const isAuthCall = (originalRequest.url || '').includes('/auth/');
+
     // ---- 401: attempt refresh-token flow (ready for when backend adds it) ----
-    if (status === 401 && !originalRequest._retry) {
+    if (status === 401 && !originalRequest._retry && !isAuthCall) {
       const refreshToken = tokenStorage.getRefreshToken();
 
       if (!refreshToken) {

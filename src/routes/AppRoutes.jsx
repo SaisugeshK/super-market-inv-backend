@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
+import AdminRoute from './AdminRoute';
 import MainLayout from '../layouts/MainLayout';
 
 import Login from '../pages/Login';
@@ -38,8 +39,10 @@ export default function AppRoutes() {
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/purchases" element={<Purchases />} />
 
-          {/* People */}
-          <Route path="/users-roles" element={<UsersRoles />} />
+          {/* People — admin only */}
+          <Route element={<AdminRoute />}>
+            <Route path="/users-roles" element={<UsersRoles />} />
+          </Route>
 
           {/* Billing / POS */}
           <Route path="/billing" element={<PointOfSale />} />

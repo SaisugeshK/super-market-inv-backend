@@ -54,6 +54,7 @@ export default function Purchases() {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [paidAmount, setPaidAmount] = useState(0);
   const [lines, setLines] = useState([emptyLine()]);
+  const [savingPurchase, setSavingPurchase] = useState(false);
 
   // inline "add supplier" so you never leave the purchase form
   const [showNewSupplier, setShowNewSupplier] = useState(false);
@@ -144,43 +145,33 @@ export default function Purchases() {
     const validLines = lines.filter((l) => l.productId && Number(l.quantity) > 0);
     if (validLines.length === 0) return toast.error('Add at least one product line');
 
+    // One atomic request: the backend computes the totals, adds stock and writes
+    // the purchase + lines + stock movements in a single transaction.
     const payload = {
       supplierId: Number(supplierId),
       invoiceNumber,
-      totalAmount: Number(totals.grandTotal.toFixed(2)),
-      tax: Number(totals.tax.toFixed(2)),
       paidAmount: Number(Number(paidAmount || 0).toFixed(2)),
-      // paymentStatus + pendingAmount are auto-derived on the backend
-      createdBy: user?.id ?? user?.userId ?? 1,
+      createdBy: user?.id ?? user?.userId ?? null,
+      items: validLines.map((l) => ({
+        productId: Number(l.productId),
+        quantity: Number(l.quantity),
+        purchasePrice: Number(l.purchasePrice),
+        taxAmount: Number(l.taxAmount || 0),
+      })),
     };
 
-    const created = await create(payload);
-    const purchaseId = created?.purchaseId ?? created?.id;
-
-    // Persist each product line so stock is incremented (PurchaseItemServiceImpl).
-    if (purchaseId) {
-      try {
-        await Promise.all(
-          validLines.map((l) =>
-            purchaseItemsService.create({
-              purchaseId: Number(purchaseId),
-              productId: Number(l.productId),
-              quantity: Number(l.quantity),
-              purchasePrice: Number(l.purchasePrice),
-              taxAmount: Number(l.taxAmount || 0),
-              total:
-                Number(l.quantity || 0) * Number(l.purchasePrice || 0) +
-                Number(l.taxAmount || 0),
-            })
-          )
-        );
-      } catch {
-        toast.error('Purchase saved, but some product lines failed to record.');
-      }
+    setSavingPurchase(true);
+    try {
+      await purchasesService.receive(payload);
+      toast.success('Purchase recorded successfully');
+      await load();
       refreshPurchaseItems();
+      setShowForm(false);
+    } catch {
+      /* interceptor toasts */
+    } finally {
+      setSavingPurchase(false);
     }
-
-    setShowForm(false);
   };
 
   const confirmDelete = async () => {
@@ -365,8 +356,8 @@ export default function Purchases() {
             <button className="btn btn-secondary" onClick={() => setShowForm(false)}>
               Cancel
             </button>
-            <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save Purchase'}
+            <button className="btn btn-primary" onClick={handleSave} disabled={savingPurchase}>
+              {savingPurchase ? 'Saving...' : 'Save Purchase'}
             </button>
           </>
         }

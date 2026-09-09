@@ -31,6 +31,7 @@ const NAV_GROUPS = [
   },
   {
     title: "People",
+    adminOnly: true,
     items: [{ to: "/users-roles", label: "Users & roles" }],
   },
   {
@@ -39,7 +40,9 @@ const NAV_GROUPS = [
   },
 ];
 
-export default function Sidebar({ collapsed, onNavigate }) {
+export default function Sidebar({ collapsed, onNavigate, role }) {
+  const isAdmin = String(role || "").toUpperCase() === "ADMIN";
+  const groups = NAV_GROUPS.filter((g) => !g.adminOnly || isAdmin);
   return (
     <aside
       className={`erp-sidebar ${collapsed ? "erp-sidebar-collapsed" : ""}`}
@@ -49,7 +52,7 @@ export default function Sidebar({ collapsed, onNavigate }) {
         {!collapsed && <span>Freshmart</span>}
       </div>
       <nav className="erp-sidebar-nav">
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <div key={group.title} className="mb-1">
             {!collapsed && (
               <div className="erp-sidebar-group-title">{group.title}</div>

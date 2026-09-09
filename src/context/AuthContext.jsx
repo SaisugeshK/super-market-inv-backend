@@ -30,9 +30,12 @@ export function AuthProvider({ children }) {
     const accessToken = data?.token || data?.accessToken || data?.jwt;
     const refreshToken = data?.refreshToken;
     const loggedInUser = data?.user || {
+      id: data?.userId,
+      userId: data?.userId,
       username: data?.username,
       email: data?.email ?? credentials.email,
       roleId: data?.roleId,
+      roleName: data?.roleName || null,
     };
 
     if (!accessToken) {

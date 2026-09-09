@@ -330,45 +330,51 @@ export default function PointOfSale() {
 
     setIsSubmitting(true);
     try {
-      const paymentStatus =
-        Number(paidAmount || 0) >= totals.grandTotal ? "PAID" : "PENDING";
-
+      // One atomic request: the backend computes every total from product prices
+      // + taxes, locks stock, and writes the sale, lines and stock movements in a
+      // single transaction (POST /api/sales/checkout).
       const payload = {
         customerId: customerId ? Number(customerId) : null, // optional for walk-in
         counterId: counterId ? Number(counterId) : null,
-        createdBy: user?.id ?? user?.userId ?? 1,
+        createdBy: user?.id ?? user?.userId ?? null,
         paymentMethod,
-        paymentStatus,
-        totalAmount: Number(totals.grandTotal.toFixed(2)),
-        // invoiceNumber left blank -> backend auto-generates INV-YYYYMMDD-XXXXX
+        discountAmount: Number(discountAmount || 0),
+        paidAmount: Number(paidAmount || 0),
+        items: cart.map((l) => ({
+          productId: Number(l.productId),
+          quantity: Number(l.quantity),
+        })),
       };
-      const result = await salesService.create(payload);
-      const saleId = result?.saleId ?? result?.id;
+      const result = await salesService.checkout(payload);
 
-      // Record each cart line so stock is deducted (SalesItemServiceImpl).
-      if (saleId) {
-        await Promise.all(
-          cart.map((l) =>
-            salesItemsService.create({
-              saleId: Number(saleId),
-              productId: Number(l.productId),
-              quantity: Number(l.quantity),
-            }),
-          ),
-        );
-      }
+      // Trust the server's numbers for the receipt / invoice / PDF.
+      const serverTotals = {
+        subtotal: Number(result.subtotal ?? 0),
+        tax: Number(result.taxAmount ?? 0),
+        discount: Number(result.discountAmount ?? 0),
+        grandTotal: Number(result.grandTotal ?? 0),
+        balance: Number(result.balanceAmount ?? 0),
+      };
+      const serverCart = (result.items || []).map((li) => ({
+        productId: li.productId,
+        productName: li.productName,
+        sellingPrice: Number(li.unitPrice ?? 0),
+        gstPercent: Number(li.taxPercentage ?? 0),
+        quantity: li.quantity,
+        total: Number(li.lineTotal ?? 0),
+      }));
 
       toast.success("Sale completed successfully");
       setShowPreview(false);
       setReceipt({
         ...result,
-        cart,
+        cart: serverCart.length ? serverCart : cart,
         customer: customers.find(
           (c) => (c.id ?? c.customerId) === Number(customerId),
         ),
-        totals,
+        totals: serverCart.length ? serverTotals : totals,
         paymentMethod,
-        paidAmount: Number(paidAmount || 0),
+        paidAmount: Number(result.paidAmount ?? paidAmount ?? 0),
         timestamp: dayjs().format("DD MMM YYYY, HH:mm"),
       });
 
