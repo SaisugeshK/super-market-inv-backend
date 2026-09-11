@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import toast from "react-hot-toast";
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiUpload } from "react-icons/fi";
 import productsService from "../services/productsService";
 import categoriesService from "../services/categoriesService";
 import unitsService from "../services/unitsService";
@@ -20,6 +20,7 @@ import Pagination from "../components/Pagination";
 import FormInput from "../components/FormInput";
 import FormSelect from "../components/FormSelect";
 import Loader from "../components/Loader";
+import ProductImportModal from "../components/ProductImportModal";
 
 const asList = (data) =>
   Array.isArray(data) ? data : data?.content || data?.data || [];
@@ -96,7 +97,7 @@ const emptyValues = {
 };
 
 export default function Products() {
-  const { items, isLoading, isSaving, create, update, remove } = useCrud(
+  const { items, isLoading, isSaving, load, create, update, remove } = useCrud(
     productsService,
     {
       entityName: "Product",
@@ -112,6 +113,7 @@ export default function Products() {
   const [showForm, setShowForm] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
   const [deletingRow, setDeletingRow] = useState(null);
+  const [showImport, setShowImport] = useState(false);
 
   const {
     register,
@@ -270,6 +272,14 @@ export default function Products() {
     setShowForm(false);
   };
 
+  const handleImported = async () => {
+    // Refresh the product list plus category/unit refs (the import may have
+    // auto-created new ones) — the Stock page fetches its own copy of
+    // productsService.getAll() fresh on every mount, so it picks up new
+    // items automatically on next visit without any extra wiring here.
+    await Promise.all([load(), loadRefs()]);
+  };
+
   const confirmDelete = async () => {
     if (!deletingRow) return;
     await remove(deletingRow.id ?? deletingRow.productId);
@@ -337,6 +347,12 @@ export default function Products() {
             placeholder="Search products..."
           />
           <button
+            className="btn btn-outline-primary d-flex align-items-center gap-1"
+            onClick={() => setShowImport(true)}
+          >
+            <FiUpload /> Import CSV/Excel
+          </button>
+          <button
             className="btn btn-primary d-flex align-items-center gap-1"
             onClick={openCreate}
           >
@@ -344,6 +360,12 @@ export default function Products() {
           </button>
         </div>
       </div>
+
+      <ProductImportModal
+        show={showImport}
+        onClose={() => setShowImport(false)}
+        onImported={handleImported}
+      />
 
       <DataTable
         isLoading={isLoading}

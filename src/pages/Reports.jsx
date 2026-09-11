@@ -21,8 +21,19 @@ const toIso = (v) => (v ? `${v}:00` : undefined);
 export default function Reports() {
   const [tab, setTab] = useState('sales');
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Switch tabs: drop the previous tab's rows immediately so a table never
+  // renders another report's data (and its mismatched row keys) for a frame
+  // before the refetch lands.
+  const changeTab = (key) => {
+    if (key === tab) return;
+    setRows([]);
+    setError(null);
+    setLoading(true);
+    setTab(key);
+  };
 
   // filters
   const [from, setFrom] = useState('');
@@ -98,7 +109,7 @@ export default function Reports() {
           <li className="nav-item" key={t.key}>
             <button
               className={`nav-link d-flex align-items-center gap-1 ${tab === t.key ? 'active' : ''}`}
-              onClick={() => setTab(t.key)}
+              onClick={() => changeTab(t.key)}
             >
               <t.icon size={14} /> {t.label}
             </button>
@@ -180,8 +191,8 @@ function SalesTable({ rows }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => (
-          <tr key={r.saleId}>
+        {rows.map((r, i) => (
+          <tr key={r.saleId ?? i}>
             <td>{r.invoiceNumber}</td>
             <td>{r.saleDate ? String(r.saleDate).replace('T', ' ').slice(0, 16) : '—'}</td>
             <td>{r.customerName || 'Walk-in'}</td>
@@ -212,8 +223,8 @@ function PurchasesTable({ rows }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => (
-          <tr key={r.purchaseId}>
+        {rows.map((r, i) => (
+          <tr key={r.purchaseId ?? i}>
             <td>{r.invoiceNumber}</td>
             <td>{r.purchaseDate ? String(r.purchaseDate).replace('T', ' ').slice(0, 16) : '—'}</td>
             <td>{r.supplierName}</td>
@@ -245,8 +256,8 @@ function SupplierOutstandingTable({ rows }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => (
-          <tr key={r.supplierId}>
+        {rows.map((r, i) => (
+          <tr key={r.supplierId ?? i}>
             <td>{r.supplierName}</td>
             <td className="text-end">{money(r.totalPurchases)}</td>
             <td className="text-end">{money(r.totalPaid)}</td>
@@ -273,8 +284,8 @@ function StockTable({ rows }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => (
-          <tr key={r.productId}>
+        {rows.map((r, i) => (
+          <tr key={r.productId ?? i}>
             <td>{r.productName}</td>
             <td>{r.barcode}</td>
             <td>{r.unit}</td>

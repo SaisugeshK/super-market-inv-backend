@@ -34,7 +34,7 @@ const STATUS_PILL = {
 
 export default function Purchases() {
   const { user } = useAuth();
-  const { items, isLoading, isSaving, create, remove, load } = useCrud(purchasesService, {
+  const { items, isLoading, isSaving, remove, load } = useCrud(purchasesService, {
     entityName: 'Purchase',
   });
 

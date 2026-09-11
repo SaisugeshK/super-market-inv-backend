@@ -45,7 +45,7 @@ export default function CrudPage({ config }) {
     rowActions,
   } = config;
 
-  const { items, isLoading, isSaving, load, create, update, remove } = useCrud(service, {
+  const { items, isLoading, isSaving, create, update, remove } = useCrud(service, {
     entityName,
   });
 

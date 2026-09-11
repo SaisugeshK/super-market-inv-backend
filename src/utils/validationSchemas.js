@@ -38,7 +38,11 @@ export const supplierSchema = yup.object({
   supplierName: yup.string().required('Supplier name is required'),
   contactPerson: yup.string().nullable(),
   phone: yup.string().matches(phoneRegex, 'Enter a valid phone number').required('Phone is required'),
-  email: yup.string().email('Enter a valid email').nullable(),
+  email: yup
+    .string()
+    .transform((v) => (v === '' ? null : v))
+    .email('Enter a valid email')
+    .nullable(),
   address: yup.string().nullable(),
   gstNumber: yup.string().nullable(),
   status: yup.string().required('Status is required'),

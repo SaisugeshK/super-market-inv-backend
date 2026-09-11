@@ -18,7 +18,6 @@ import productsService from "../services/productsService";
 import productTaxesService from "../services/productTaxesService";
 import billingCountersService from "../services/billingCountersService";
 import salesService from "../services/salesService";
-import salesItemsService from "../services/salesItemsService";
 import holdInvoicesService from "../services/holdInvoicesService";
 import { useAuth } from "../context/AuthContext";
 import Loader from "../components/Loader";
